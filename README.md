@@ -66,6 +66,14 @@ Lấy API key miễn phí tại: https://console.groq.com/keys
 | whisper-large-v3-turbo | Nhanh hơn | $0.04/h | Khuyên dùng |
 | whisper-large-v3 | Chậm hơn | $0.111/h | Chính xác hơn |
 
+## � TODO
+
+- [ ] 🎥 **YouTube Tab** - Nhập link YouTube, tự động tải và transcribe
+- [ ] 🎤 **Microphone Tab** - Ghi âm trực tiếp từ mic và tạo phụ đề
+- [ ] 📄 **Multiple Output Formats** - Xuất SRT, WebVTT, TXT, LRC
+- [ ] 🌍 **Translation Mode** - Dịch audio sang tiếng Anh (Groq translations API)
+
 ## 📝 License
 
 MIT
+
