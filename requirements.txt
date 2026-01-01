@@ -1,0 +1,18 @@
+# SRT Generator Pro - Dependencies
+
+# Core
+gradio>=4.0.0
+groq>=0.9.0
+
+# YouTube download
+yt-dlp>=2024.1.0
+
+# Utilities  
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Note: ffmpeg is required for yt-dlp to work properly
+# Install ffmpeg:
+# - Windows: choco install ffmpeg or download from https://ffmpeg.org/download.html
+# - Linux: sudo apt install ffmpeg
+# - macOS: brew install ffmpeg
