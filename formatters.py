@@ -1,41 +1,61 @@
-"""
-Formatters module - Output format converters (SRT, TXT, JSON)
-"""
-
+"""Strict, reusable subtitle output formatters."""
 import json
+import math
+
 from utils import format_time_srt
 
 
-def to_srt(segments: list) -> str:
-    """Chuyển đổi segments sang định dạng SRT"""
-    srt_lines = []
-    for i, segment in enumerate(segments):
-        start_time = format_time_srt(segment['start'])
-        end_time = format_time_srt(segment['end'])
-        text = segment['text'].strip()
-        srt_lines.append(f"{i + 1}\n{start_time} --> {end_time}\n{text}\n")
-    return "\n".join(srt_lines)
-
-
-def to_txt(segments: list) -> str:
-    """Chuyển đổi segments sang text thuần"""
-    return "\n".join([segment['text'].strip() for segment in segments])
-
-
-def to_json(segments: list, full_text: str, language: str, duration: float) -> str:
-    """Chuyển đổi sang JSON format"""
-    data = {
-        "language": language,
-        "duration": duration,
-        "full_text": full_text,
-        "segments": [
-            {
-                "id": i + 1,
-                "start": seg['start'],
-                "end": seg['end'],
-                "text": seg['text'].strip()
+def normalize_segments(segments: list) -> list[dict]:
+    """Convert SDK objects/dicts into clean, time-ordered segments."""
+    cleaned = []
+    for raw in segments or []:
+        if hasattr(raw, "model_dump"):
+            raw = raw.model_dump()
+        elif not isinstance(raw, dict):
+            raw = {
+                "start": getattr(raw, "start", None),
+                "end": getattr(raw, "end", None),
+                "text": getattr(raw, "text", ""),
             }
-            for i, seg in enumerate(segments)
-        ]
-    }
-    return json.dumps(data, ensure_ascii=False, indent=2)
+        try:
+            start, end = float(raw["start"]), float(raw["end"])
+            text = str(raw.get("text") or "").strip()
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not all(math.isfinite(t) for t in (start, end)):
+            continue
+        if start < 0 or end < start or not text:
+            continue
+        cleaned.append({"start": start, "end": end, "text": text})
+    cleaned.sort(key=lambda seg: (seg["start"], seg["end"]))
+    return cleaned
+
+
+def to_srt(segments: list[dict]) -> str:
+    lines = []
+    for i, segment in enumerate(normalize_segments(segments), 1):
+        lines.append(
+            f"{i}\n{format_time_srt(segment['start'])} --> "
+            f"{format_time_srt(segment['end'])}\n{segment['text']}"
+        )
+    return "\n\n".join(lines) + ("\n" if lines else "")
+
+
+def to_txt(segments: list[dict]) -> str:
+    return "\n".join(segment["text"] for segment in normalize_segments(segments))
+
+
+def to_json(segments: list[dict], full_text: str, language: str, duration: float) -> str:
+    normalized = normalize_segments(segments)
+    return json.dumps(
+        {
+            "language": language,
+            "duration": duration,
+            "full_text": full_text,
+            "segments": [
+                {"id": i, **segment} for i, segment in enumerate(normalized, 1)
+            ],
+        },
+        ensure_ascii=False,
+        indent=2,
+    )
