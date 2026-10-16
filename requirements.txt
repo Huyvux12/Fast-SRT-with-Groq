@@ -1,18 +1,4 @@
-# SRT Generator Pro - Dependencies
-
-# Core
-gradio>=4.0.0
-groq>=0.9.0
-
-# YouTube download
-yt-dlp>=2024.1.0
-
-# Utilities  
-python-dotenv>=1.0.0
-requests>=2.31.0
-
-# Note: ffmpeg is required for yt-dlp to work properly
-# Install ffmpeg:
-# - Windows: choco install ffmpeg or download from https://ffmpeg.org/download.html
-# - Linux: sudo apt install ffmpeg
-# - macOS: brew install ffmpeg
+# Python >=3.10. Gradio 6 requires launch()-level theme and CSS.
+gradio>=6.0.0,<7.0.0
+groq>=1.0.0,<2.0.0
+yt-dlp>=2026.1.0

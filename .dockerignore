@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+__pycache__
+.pytest_cache
+tests
+.env
+.env.*
+*.mp3
+*.wav
+*.mp4
+*.m4a
+*.webm
+*.flac
+*.srt
