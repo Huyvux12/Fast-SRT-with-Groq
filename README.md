@@ -1,108 +1,116 @@
-# SRT Generator Pro
+# Fast SRT Studio — Groq Whisper Subtitle Generator
 
-Tool tạo phụ đề cải tiến sử dụng Groq Whisper API với giao diện Gradio thân thiện.
+A redesigned, BYOK (bring-your-own-key) Gradio 6 app that creates SRT, TXT or JSON captions from YouTube, uploaded audio/video or your microphone.
 
-## Tính năng
+## Highlights
 
-- **API Key Management**: Nhập trực tiếp API key + kiểm tra hoạt động ngay
-- **YouTube Input**: Paste link YouTube, hiển thị thumbnail, tải audio tự động
-- **Audio Upload**: Hỗ trợ upload file audio/video
-- **Microphone Recording**: Ghi âm trực tiếp từ browser
-- **Multi-format Output**: SRT, TXT, JSON
-- **Multi-language**: Tự động nhận diện hoặc chọn ngôn ngữ cụ thể
+- Clean, responsive studio UI with explicit input selection and live YouTube thumbnails.
+- Whisper Large v3 Turbo or Large v3, automatic language detection and language selection.
+- YouTube URLs canonicalized and validated before passing to yt-dlp; one video per request.
+- Videos and recordings converted to 16 kHz mono MP3 with FFmpeg.
+- Up to **300 MB input** and **3 hours** of media; chunked at **10 minutes** to keep requests far below the Groq free-tier file-size limit.
+- Per-chunk timestamps shifted back onto the original timeline.
+- UTF-8 SRT, TXT and JSON exports with downloadable files.
+- Groq keys entered in the browser; never saved to local files or source control.
+- Automatic removal of output files older than 24 hours when a new job completes.
+- Docker, Colab and GitHub Actions support.
 
-## Cài đặt
+## Requirements
 
-### Yêu cầu
+- Python **3.10 or newer** (3.11 or 3.12 recommended).
+- FFmpeg and FFprobe available on PATH.
+- A Groq API key from https://console.groq.com/keys.
 
-- Python 3.9+
-- ffmpeg (cần cho tính năng YouTube)
+Install FFmpeg:
 
-### Cài đặt dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### Cài đặt ffmpeg (nếu chưa có)
-
-**Windows (Chocolatey):**
-```bash
-choco install ffmpeg
-```
-
-**Linux:**
-```bash
-sudo apt install ffmpeg
-```
-
-**macOS:**
-```bash
+~~~bash
+# Ubuntu / Debian
+sudo apt update && sudo apt install -y ffmpeg
+# macOS / Homebrew
 brew install ffmpeg
-```
+# Windows / Chocolatey (Administrator)
+choco install ffmpeg
+~~~
 
-## Sử dụng
+## Run locally
 
-### Chạy ứng dụng
-
-```bash
+~~~bash
+git clone https://github.com/Huyvux12/Fast-SRT-with-Groq.git
+cd Fast-SRT-with-Groq
+python -m venv .venv
+# Linux / macOS:
+source .venv/bin/activate
+# Windows PowerShell:
+# .venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 python app.py
-```
+~~~
 
-Mở browser tại: http://localhost:7860
+Open http://127.0.0.1:7860
 
-### Lấy API Key
+Choose your source, enter your Groq API key, select a model/language and click **Generate subtitles**. Longer files are handled automatically. You do not need a GPU: the actual speech recognition runs on Groq.
 
-1. Truy cập https://console.groq.com/keys
-2. Đăng nhập/Đăng ký tài khoản
-3. Tạo API key mới
-4. Copy và paste vào ô "Groq API Key" trong app
+## Google Colab
 
-### Google Colab
+Open [the Colab notebook](https://colab.research.google.com/github/Huyvux12/Fast-SRT-with-Groq/blob/feat/full-stack-srt-overhaul-20261016/colab.ipynb). The notebook creates a temporary share link.
 
-Mở file `colab.ipynb` hoặc click badge bên dưới:
+Important: do not paste your API key into notebook cells or share a public app session with keys already entered.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/srt-gen-pro/blob/main/colab.ipynb)
+## Docker
 
-## Định dạng Output
+~~~bash
+docker build -t fast-srt-groq .
+docker run --rm -p 127.0.0.1:7860:7860 fast-srt-groq
+~~~
 
-### SRT
-```srt
-1
-00:00:00,000 --> 00:00:02,500
-Xin chào mọi người
+The Docker container listens on 0.0.0.0 internally so the local port mapping works. For a public deployment, use HTTPS and access control.
 
-2
-00:00:02,500 --> 00:00:05,000
-Hôm nay chúng ta sẽ học...
-```
+~~~bash
+docker run --rm -p 7860:7860 \
+  -e APP_AUTH_USER=your-user \
+  -e APP_AUTH_PASSWORD=replace-with-a-strong-secret \
+  fast-srt-groq
+~~~
 
-### TXT
-```
-Xin chào mọi người
-Hôm nay chúng ta sẽ học...
-```
+If publicly deployed, put it behind HTTPS and additional rate limiting. Never commit secrets. Set both authentication variables or neither. On an exposed server, you may use APP_HOST=0.0.0.0 and PORT=7860. By default the local Python app binds only to 127.0.0.1.
 
-### JSON
-```json
-{
-  "language": "vi",
-  "duration": 120.5,
-  "full_text": "Xin chào mọi người...",
-  "segments": [
-    {"id": 1, "start": 0.0, "end": 2.5, "text": "Xin chào mọi người"}
-  ]
-}
-```
+## Formats
+
+- **SRT**: numbered captions with precise start/end timestamps.
+- **TXT**: readable transcription, one subtitle segment per line.
+- **JSON**: language, duration, full_text, and segment timing/text.
+
+## Operational limits & privacy
+
+- This is a BYOK tool: the API key is transferred from your browser to the running Gradio server and then to Groq. **Only run it on infrastructure you trust.**
+- No key is intentionally stored in the app's result files. The app has no account database or persistent key store.
+- Audio is sent to Groq for transcription. See Groq's privacy policy for processing/retention terms.
+- Input files may be temporarily cached by Gradio; downloaded/converted working media is deleted after each request. Downloadable output files expire on subsequent jobs after 24 hours.
+- YouTube age restrictions, geo restrictions and anti-bot protections can prevent downloading.
+- Extremely long or noisy audio may need manual caption review, especially at chunk boundaries.
+- Each chunk consumes Groq API usage; account rate limits and provider quotas still apply.
+- FFmpeg is required for **all sources**, not only YouTube.
+
+## Test
+
+~~~bash
+python -m pip install -r requirements-dev.txt
+python -m pytest -q tests
+~~~
+
+Offline unit tests mock the network calls. GitHub Actions runs the tests on Python 3.10 and 3.12.
 
 ## Troubleshooting
 
-| Vấn đề | Giải pháp |
-|--------|-----------|
-| API key không hoạt động | Kiểm tra key đúng format `gsk_...` |
-| Lỗi tải YouTube | Cài đặt/cập nhật ffmpeg |
-| Lỗi "No audio" | Kiểm tra file audio hợp lệ |
+| Symptom | Resolution |
+| --- | --- |
+| FFmpeg/ffprobe missing | Install FFmpeg and confirm both executables are on PATH. |
+| YouTube download failed | Check availability, use a direct HTTPS video URL, update yt-dlp. |
+| Groq 401 / rate limit | Verify the key, then check account limits in Groq Console. |
+| Nothing recognized | Confirm the media contains audible speech and has an audio track. |
+| Upload rejected | Input must be a supported media format, at most 300 MB and at most 3 hours. |
+| Public deployment | Add HTTPS, password protection and rate limiting before exposing. |
 
 ## License
 
-MIT License
+MIT — see [LICENSE](LICENSE).
